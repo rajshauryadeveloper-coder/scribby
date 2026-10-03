@@ -41,13 +41,16 @@ def get_default_models_dir() -> Path:
     return path
 
 
-def get_default_outputs_dir() -> Path:
+def get_default_outputs_dir(subfolder: Optional[str] = "transcriptions") -> Path:
     """Returns the default directory for saving transcription outputs."""
     outputs_dir_env = os.getenv("OUTPUTS_DIR", "outputs")
     path = Path(outputs_dir_env)
     if not path.is_absolute():
         path = get_repo_root() / path
+    if subfolder:
+        path = path / subfolder
     return path
+
 
 
 def get_default_model_dir(model_id: str, base_dir: Optional[Union[Path, str]] = None) -> Path:

@@ -68,7 +68,4 @@ models/
 *.pt
 *.onnx
 
-# Transcription outputs and artifacts
-outputs/
-output/
 

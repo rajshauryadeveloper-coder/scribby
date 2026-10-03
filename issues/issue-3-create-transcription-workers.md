@@ -82,6 +82,11 @@ The workers must:
 | `tests/test_whisper_base_worker.py` | `Added` | Tests for WhisperBaseWorker initialization, mocked pipeline transcription, and output file saving. |
 | `tests/test_whisper_medium_worker.py` | `Added` | Tests for WhisperMediumWorker initialization, mocked pipeline transcription, and output file saving. |
 | `tests/test_cli.py` | `Added` | Tests for CLI execution, argument parsing, output directory override, and error handling. |
+| `outputs/transcriptions/` | `Added` | Default directory for transcriptions containing staged `.json` and `.srt` sample outputs. |
+| `outputs/summaries/` | `Added` | Placeholder subfolder (`.gitkeep`) for future summary outputs. |
+| `outputs/translations/` | `Added` | Placeholder subfolder (`.gitkeep`) for future translation outputs. |
+| `outputs/diarization/` | `Added` | Placeholder subfolder (`.gitkeep`) for future speaker diarization outputs. |
+| `outputs/audio/` | `Added` | Placeholder subfolder (`.gitkeep`) for future audio generation outputs. |
 | `README.md` | `Modified` | Added comprehensive documentation for workers, CLI usage, Python pipeline API, and test instructions. |
 | `issues/issue-3-create-transcription-workers.md` | `Added` | Issue resolution report. |
 
@@ -98,6 +103,17 @@ The workers must:
 - **What happened:** PyTorch pipelines on macOS ARM hardware can leverage `mps` for GPU acceleration, but occasionally certain operators or memory allocations can fail on non-standard setups.
 - **Root Cause:** A hardcoded `mps` device could break if an unsupported layer or operator were invoked.
 - **Resolution:** Built automatic fallback to `cpu` in `load_pipeline` if initialization on the accelerated device fails with an exception, guaranteeing high resilience across different deployment environments.
+
+### Challenge 3 (PR Review Feedback): Staging Outputs and Categorized Subfolders
+- **What happened:** PR reviewer commented: *"Stage the output folder too. Create subfolders in this for any future outputs that we might produce. For this particular application, stage its outputs and only stage one of each output for whatever files you are doing. There might be repeats when you do it locally, but when you're staging it, keep one of each."*
+- **Root Cause:** `outputs/` was initially excluded entirely in `.gitignore`. Additionally, local test iterations produced repeated timestamped output files (`scribby_test_whisper-base_20261004_002140.json`, etc.) in the root `outputs/` directory rather than an organized subfolder.
+- **Resolution:**
+  1. Updated `scribby/workers/base.py` to route transcription outputs by default to `outputs/transcriptions/`.
+  2. Created structured subfolders for future outputs (`outputs/summaries/`, `outputs/translations/`, `outputs/diarization/`, `outputs/audio/`) with `.gitkeep`.
+  3. Removed duplicate local execution artifacts, keeping exactly one JSON (`scribby_test_whisper-base_20261004_002122.json`) and one SRT (`scribby_test_whisper-base_20261004_002122.srt`).
+  4. Updated `.gitignore` to track `outputs/` while ensuring model binaries in `models/` remain strictly ignored.
+  5. Staged and committed the categorized output structure.
+
 
 ---
 

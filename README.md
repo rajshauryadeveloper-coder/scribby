@@ -104,7 +104,7 @@ uv run pytest
 ```text
 scribby/
 ├── .env.example                          # Environment variable template
-├── .gitignore                            # Git ignore configuration (models & outputs ignored)
+├── .gitignore                            # Git ignore configuration (models ignored)
 ├── .dockerignore                         # Docker build ignore configuration
 ├── Dockerfile                            # Production container definition
 ├── pyproject.toml                        # Project metadata and dependencies
@@ -121,6 +121,12 @@ scribby/
 │   ├── __init__.py
 │   ├── whisper_base_worker.py
 │   └── whisper_medium_worker.py
+├── outputs/                              # Application outputs and artifacts
+│   ├── transcriptions/                   # Speech-to-text transcriptions (.json, .srt)
+│   ├── summaries/                        # Future summaries output (.gitkeep)
+│   ├── translations/                     # Future translations output (.gitkeep)
+│   ├── diarization/                      # Future speaker diarization output (.gitkeep)
+│   └── audio/                            # Future generated audio output (.gitkeep)
 ├── tests/                                # Test suite
 │   ├── test_cli.py
 │   ├── test_model_manager.py
