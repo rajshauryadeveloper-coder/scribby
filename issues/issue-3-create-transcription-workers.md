@@ -30,7 +30,7 @@ The workers must:
 - [x] Implement `WhisperBaseWorker` for `openai/whisper-base`.
 - [x] Implement `WhisperMediumWorker` for `openai/whisper-medium`.
 - [x] Implement automated local model caching with offline re-use and ignore model files in `.gitignore` and `.dockerignore`.
-- [x] Store timestamped, database-ready transcription files in `outputs/` (gitignored).
+- [x] Store timestamped, database-ready transcription files in categorized `outputs/` subfolders and stage one clean sample of each format in git.
 - [x] Provide pipeline integration functions and CLI entrypoints.
 - [x] Run and pass all tests.
 - [x] Open Pull Request against `main` for review without self-merging.
@@ -44,7 +44,7 @@ The workers must:
    - Implemented `ensure_model_available` utilizing `huggingface_hub.snapshot_download` targeting a local directory (`models/{model-slug}`).
    - On invocation, it inspects whether model weight files (`*.safetensors`, `*.bin`, `model.*`) and `config.json` already exist.
    - If present, downloading is skipped and weights are loaded directly from disk.
-   - `.gitignore` and `.dockerignore` were updated to exclude `models/` and `outputs/`.
+   - `.gitignore` and `.dockerignore` were updated to exclude `models/` and model weight extensions.
 2. **Standardized Workers (`scribby/workers/`):**
    - Created `BaseWhisperWorker` encapsulating lazy initialization of the Hugging Face `automatic-speech-recognition` pipeline, automatic hardware acceleration detection (`cuda` -> `mps` -> `cpu`), audio duration extraction, and file persistence.
    - Created `WhisperBaseWorker` (`scribby/workers/whisper_base_worker.py`) defaulting to `openai/whisper-base`.
@@ -62,7 +62,7 @@ The workers must:
 
 | File Path | Status | Description |
 | :--- | :--- | :--- |
-| `.gitignore` | `Modified` | Excluded `models/`, model weight extensions (`*.safetensors`, `*.bin`, `*.pt`, `*.onnx`), and `outputs/`. |
+| `.gitignore` | `Modified` | Excluded `models/` and model weight extensions (`*.safetensors`, `*.bin`, `*.pt`, `*.onnx`), while allowing `outputs/` tracking. |
 | `.dockerignore` | `Modified` | Excluded `models/` and `outputs/` from container build context. |
 | `.env.example` | `Modified` | Added `MODELS_DIR` and `OUTPUTS_DIR` configurations. |
 | `.env` | `Modified` (Local) | Added local `MODELS_DIR` and `OUTPUTS_DIR` paths. |
