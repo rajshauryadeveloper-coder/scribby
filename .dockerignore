@@ -14,3 +14,7 @@ README.md
 .pytest_cache
 .ruff_cache
 .mypy_cache
+models/
+outputs/
+output/
+

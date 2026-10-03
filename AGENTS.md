@@ -10,7 +10,8 @@ This document establishes the official instructions, standards, and workflow pro
 2. **Feature Branching:** Never commit directly to `main`. Every unit of work or issue must have its own branch.
 3. **Mandatory Issue Resolution Logging:** Every issue must be tracked with a structured resolution report under `issues/` and posted back to the GitHub issue before closure.
 4. **Zero Secret Leakage:** Never commit secrets, tokens, or local `.env` files. Always keep `.env.example` in sync with any required environment variables.
-5. **Rigorous Verification:** Never conclude a task without executing and verifying the changes.
+5. **Zero Model Weight Leakage:** Never commit model binaries (`*.safetensors`, `*.bin`, etc.) or local model caches (`models/`) to git.
+6. **Rigorous Verification:** Never conclude a task without executing and verifying the changes.
 
 ---
 
@@ -93,3 +94,19 @@ Post the exact Markdown content of the resolution report as a comment on the Git
 - The `Dockerfile` must utilize multi-stage or slim base images with `uv` for reproducible builds.
 - Ensure any added assets or ignore rules are reflected in `.dockerignore`.
 - Avoid hardcoding host paths or sensitive variables into Docker images.
+
+---
+
+## 7. Model & Heavy Artifact Management
+
+- **Local Model Caching:** AI models must download locally on their initial run and subsequently load offline from disk to eliminate redundant network traffic.
+- **Selective Downloads:** When utilizing `snapshot_download` from `huggingface_hub`, always configure `ignore_patterns` to skip unused framework binaries (`*.msgpack`, `*.h5`, `*.ot`, etc.) to prevent multi-gigabyte bloat.
+- **Git & Container Exclusion:** Model weight files (`*.safetensors`, `*.bin`, `*.pt`, `*.onnx`) and model directories (`models/`) must remain strictly excluded in `.gitignore` and `.dockerignore`.
+
+---
+
+## 8. Output Artifact Organization
+
+- **Categorized Subfolders:** Outputs must be organized by task domain into structured subfolders under `outputs/` (e.g. `outputs/transcriptions/`, `outputs/summaries/`).
+- **Single Representation Rule:** When staging outputs in git for verification, keep exactly one clean copy of each output format (e.g., one `.json` and one `.srt` per sample), avoiding repeated local test churn.
+

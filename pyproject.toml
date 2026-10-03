@@ -6,4 +6,12 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "python-dotenv>=1.0.1",
+    "soundfile>=0.14.0",
+    "torch>=2.14.1",
+    "transformers>=5.18.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
 ]

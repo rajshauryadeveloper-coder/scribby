@@ -55,23 +55,91 @@ docker run --rm --env-file .env scribby:latest
 
 ---
 
+## Transcription Workers
+
+Scribby provides production-ready speech-to-text workers powered by Hugging Face Transformers and Whisper models:
+- **Whisper Base Worker** (`openai/whisper-base`): Lightweight and fast speech recognition.
+- **Whisper Medium Worker** (`openai/whisper-medium`): High-accuracy, rich multilingual speech recognition.
+
+### Key Features
+- **Local Model Caching:** Models are downloaded once to `models/` (gitignored) on the first run and subsequently loaded offline from disk without re-downloading.
+- **Database-Ready Timestamped Output:** Transcriptions are structured into JSON files under `outputs/` with audio metadata, total duration, full text, and timestamped segments (`id`, `start`, `end`, `text`).
+- **Pipeline & CLI Ready:** Can be used either as standalone CLI commands or imported directly into Python processing pipelines.
+- **Optional Subtitles:** Can export `.srt` subtitle files alongside JSON via `--srt`.
+
+### Usage
+
+#### 1. CLI Execution
+```bash
+# Using Whisper Base
+uv run python workers/whisper_base_worker.py path/to/audio.wav
+
+# Using Whisper Medium with subtitle export
+uv run python workers/whisper_medium_worker.py path/to/audio.mp3 --srt --output-dir outputs/
+```
+
+#### 2. Pipeline Integration (Python API)
+```python
+from scribby.workers.whisper_base_worker import WhisperBaseWorker, transcribe_audio
+
+# One-liner convenience
+result = transcribe_audio("audio.wav", output_dir="outputs/", generate_srt=True)
+print(result["text"])
+print(result["segments"])
+
+# Or with worker instance
+worker = WhisperBaseWorker()
+result = worker.transcribe("audio.mp3")
+```
+
+### Running Tests
+```bash
+uv run pytest
+```
+
+---
+
 ## Project Structure
 
 ```text
 scribby/
 ├── .env.example                          # Environment variable template
-├── .gitignore                            # Git ignore configuration
+├── .gitignore                            # Git ignore configuration (models ignored)
 ├── .dockerignore                         # Docker build ignore configuration
 ├── Dockerfile                            # Production container definition
 ├── pyproject.toml                        # Project metadata and dependencies
 ├── uv.lock                               # Deterministic dependency lockfile
 ├── main.py                               # Application entrypoint
+├── scribby/                              # Core package
+│   ├── __init__.py
+│   └── workers/                          # Transcription workers
+│       ├── __init__.py
+│       ├── base.py                       # Base worker, model caching & output formatters
+│       ├── whisper_base_worker.py        # openai/whisper-base worker
+│       └── whisper_medium_worker.py      # openai/whisper-medium worker
+├── workers/                              # Root convenience accessors
+│   ├── __init__.py
+│   ├── whisper_base_worker.py
+│   └── whisper_medium_worker.py
+├── outputs/                              # Application outputs and artifacts
+│   ├── transcriptions/                   # Speech-to-text transcriptions (.json, .srt)
+│   ├── summaries/                        # Future summaries output (.gitkeep)
+│   ├── translations/                     # Future translations output (.gitkeep)
+│   ├── diarization/                      # Future speaker diarization output (.gitkeep)
+│   └── audio/                            # Future generated audio output (.gitkeep)
+├── tests/                                # Test suite
+│   ├── test_cli.py
+│   ├── test_model_manager.py
+│   ├── test_output_formatter.py
+│   ├── test_whisper_base_worker.py
+│   └── test_whisper_medium_worker.py
 ├── README.md                             # Project documentation
 ├── AGENTS.md                             # AI Agent operational guidelines
 └── issues/                               # Issue tracking and resolution history
     ├── templates/
     │   └── issue-resolution-template.md  # Standardized issue resolution report template
-    └── issue-1-initialize-codebase.md    # Initialized codebase report
+    ├── issue-1-initialize-codebase.md    # Initialized codebase report
+    └── issue-3-create-transcription-workers.md # Transcription workers report
 ```
 
 ---
