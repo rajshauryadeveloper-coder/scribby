@@ -60,3 +60,15 @@ Icon
 .mypy_cache/
 .coverage
 htmlcov/
+
+# Model weights and cached downloads
+models/
+*.bin
+*.safetensors
+*.pt
+*.onnx
+
+# Transcription outputs and artifacts
+outputs/
+output/
+
