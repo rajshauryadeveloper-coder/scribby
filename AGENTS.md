@@ -68,7 +68,7 @@ Create a new report in the `issues/` directory:
 - Source Template: `issues/templates/issue-resolution-template.md`
 
 The report must document:
-- **Metadata:** Issue link, date, branch, PR.
+- **Metadata:** Issue link, date & Indian Standard timestamp down to the second (`YYYY-MM-DD HH:MM:SS IST`), branch, PR.
 - **Issue Description:** Summary of the requirements and acceptance criteria.
 - **Solution Overview:** Design and architecture of the implementation.
 - **Changed Files:** Detailed table of created, modified, or deleted files.

@@ -4,7 +4,7 @@
 | :--- | :--- |
 | **Issue Link** | [#[ISSUE_NUMBER]](https://github.com/rajshauryadeveloper-coder/scribby/issues/[ISSUE_NUMBER]) |
 | **Resolved By** | [AGENT / DEVELOPER NAME] |
-| **Date** | YYYY-MM-DD |
+| **Date & Timestamp (IST)** | YYYY-MM-DD HH:MM:SS IST (UTC+05:30) |
 | **Branch** | `[BRANCH_NAME]` |
 | **Pull Request** | [PR #[PR_NUMBER]](https://github.com/rajshauryadeveloper-coder/scribby/pull/[PR_NUMBER]) |
 

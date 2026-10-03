@@ -4,7 +4,7 @@
 | :--- | :--- |
 | **Issue Link** | [#1](https://github.com/rajshauryadeveloper-coder/scribby/issues/1) |
 | **Resolved By** | Antigravity AI Agent |
-| **Date** | 2026-10-03 |
+| **Date & Timestamp (IST)** | 2026-10-03 23:40:13 IST (UTC+05:30) |
 | **Branch** | `issue-1-initialize-codebase` |
 | **Pull Request** | [#2](https://github.com/rajshauryadeveloper-coder/scribby/pull/2) |
 
