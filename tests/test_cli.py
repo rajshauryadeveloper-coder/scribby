@@ -65,3 +65,32 @@ def test_worker_cli_missing_file(tmp_path, monkeypatch):
     )
     exit_code = base_main()
     assert exit_code != 0
+
+
+def test_base_worker_cli_metadata_output(tmp_path, monkeypatch, capsys):
+    audio_file = tmp_path / "cli_meta_test.wav"
+    audio_file.write_bytes(b"dummy audio")
+    out_dir = tmp_path / "cli_meta_out"
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["whisper_base_worker.py", str(audio_file), "--output-dir", str(out_dir), "--quiet"],
+    )
+
+    mock_pipeline = MagicMock()
+    mock_pipeline.return_value = {
+        "text": "CLI metadata output display test",
+        "chunks": [{"text": "CLI metadata output display test", "timestamp": (0.0, 1.5)}],
+    }
+
+    with patch("scribby.workers.base.ensure_model_available"):
+        with patch("scribby.workers.base.pipeline", return_value=mock_pipeline):
+            exit_code = base_main()
+            assert exit_code == 0
+            captured = capsys.readouterr()
+            assert "=== Transcription Complete ===" in captured.out
+            assert "Execution Time:" in captured.out
+            assert "Speed:" in captured.out
+            assert "Progress: 100.0%" in captured.out
+            assert "Output File:" in captured.out
