@@ -6,7 +6,7 @@
 | **Resolved By** | Antigravity AI Agent |
 | **Date** | 2026-10-03 |
 | **Branch** | `issue-1-initialize-codebase` |
-| **Pull Request** | Pending PR on `issue-1-initialize-codebase` |
+| **Pull Request** | [#2](https://github.com/rajshauryadeveloper-coder/scribby/pull/2) |
 
 ---
 
@@ -58,6 +58,11 @@ The repository was an empty repository with just an initial commit. The task was
 - **What happened:** When `pyproject.toml` was configured with `[build-system]` using `hatchling.build`, running `uv sync` failed with `ValueError: Unable to determine which files to ship inside the wheel... The most likely cause of this is that there is no directory that matches the name of your project (scribby)`.
 - **Root Cause:** Hatchling expects either a package directory matching the package name (e.g. `scribby/`) or a `src/` layout. Scribby at this stage is an application workspace, not a distributed wheel package.
 - **Resolution:** Removed the redundant packaging build-system table from `pyproject.toml`, allowing `uv` to natively manage dependencies and virtual environments as an application project. `uv sync` and `uv run` subsequently succeeded immediately.
+
+### Mistake 2: Missing remote `main` branch during pull request creation
+- **What happened:** Creating the pull request via `gh pr create` failed with GraphQL errors: `Base sha can't be blank, Base ref must be a branch`.
+- **Root Cause:** The remote repository on GitHub was newly created and `main` had not been pushed upstream yet. Pushing the feature branch first caused GitHub to treat `issue-1-initialize-codebase` as the default branch with no `main` branch on the remote.
+- **Resolution:** Pushed `main` to `origin`, set `main` as the default branch using `gh repo edit --default-branch main`, and then successfully opened PR #2 into `main`.
 
 ---
 
