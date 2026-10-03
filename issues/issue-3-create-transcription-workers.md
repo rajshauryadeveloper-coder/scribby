@@ -104,7 +104,7 @@ The workers must:
 - **Root Cause:** A hardcoded `mps` device could break if an unsupported layer or operator were invoked.
 - **Resolution:** Built automatic fallback to `cpu` in `load_pipeline` if initialization on the accelerated device fails with an exception, guaranteeing high resilience across different deployment environments.
 
-### Challenge 3 (PR Review Feedback): Staging Outputs and Categorized Subfolders
+### Challenge 3 (PR Review Feedback 1): Staging Outputs and Categorized Subfolders
 - **What happened:** PR reviewer commented: *"Stage the output folder too. Create subfolders in this for any future outputs that we might produce. For this particular application, stage its outputs and only stage one of each output for whatever files you are doing. There might be repeats when you do it locally, but when you're staging it, keep one of each."*
 - **Root Cause:** `outputs/` was initially excluded entirely in `.gitignore`. Additionally, local test iterations produced repeated timestamped output files (`scribby_test_whisper-base_20261004_002140.json`, etc.) in the root `outputs/` directory rather than an organized subfolder.
 - **Resolution:**
@@ -114,6 +114,14 @@ The workers must:
   4. Updated `.gitignore` to track `outputs/` while ensuring model binaries in `models/` remain strictly ignored.
   5. Staged and committed the categorized output structure.
 
+### Challenge 4 (PR Review Feedback 2): Missing Whisper Medium Outputs & Redundant Weights Download
+- **What happened:** PR reviewer commented: *"The outputs for the Wispr medium model seem to be missing. Please check on that. Figure out why they're missing. Has it not been run on this model? Was it not working? check that"*
+- **Root Cause:** In the initial execution, only the Whisper Base worker was run end-to-end against the audio sample to verify the pipeline. When running Whisper Medium, `huggingface_hub.snapshot_download` by default downloads all repository files including redundant framework weights (`flax_model.msgpack`, `tf_model.h5`, `pytorch_model.bin`), which together exceed 10+ GB, causing long download times.
+- **Resolution:**
+  1. Configured `snapshot_download` in `scribby/workers/base.py` with `ignore_patterns=["*.msgpack", "*.h5", "*.ot", "flax_model*", "tf_model*"]` to only download the required PyTorch `safetensors` and JSON configs.
+  2. Executed `workers/whisper_medium_worker.py /tmp/scribby_test.wav --srt`.
+  3. Generated and staged one JSON (`outputs/transcriptions/scribby_test_whisper-medium_20261004_005234.json`) and one SRT (`outputs/transcriptions/scribby_test_whisper-medium_20261004_005234.srt`).
+  4. Verified all 18 automated tests continue to pass.
 
 ---
 
@@ -138,27 +146,37 @@ tests/test_output_formatter.py ...                                       [ 55%]
 tests/test_whisper_base_worker.py ....                                   [ 77%]
 tests/test_whisper_medium_worker.py ....                                 [100%]
 
-============================== 18 passed in 1.47s ==============================
+============================== 18 passed in 2.13s ==============================
 ```
 
 ### 2. End-to-End Real Audio Transcription & Caching Verification
-Executed actual transcription with a synthesized speech sample (`/tmp/scribby_test.wav`):
 
-**First Run (Initial Download & Inference):**
+#### A. Whisper Base (`openai/whisper-base`)
+**Execution:**
 ```bash
 uv run python scribby/workers/whisper_base_worker.py /tmp/scribby_test.wav --srt
 ```
 - Downloaded model snapshot to `models/whisper-base`.
-- Successfully transcribed on Apple Silicon GPU (`mps`) device.
-- Generated `outputs/scribby_test_whisper-base_20261004_002122.json` and `.srt`.
-- Full Text Output: `"Welcome to Scribby Transcription Test."`
+- Transcribed on Apple Silicon GPU (`mps`) device.
+- Generated `outputs/transcriptions/scribby_test_whisper-base_20261004_002122.json` and `.srt`.
+- Full Text: `"Welcome to Scribby Transcription Test."`
 
 **Second Run (Offline Cache Verification):**
 ```bash
 uv run python scribby/workers/whisper_base_worker.py /tmp/scribby_test.wav
 ```
 - Log output: `Model 'openai/whisper-base' found locally in '/Users/shaurya/Developer/scribby/models/whisper-base'. Skipping download.`
-- Inference finished in under 1 second without any remote network requests.
+- Inference completed in under 1 second without network access.
+
+#### B. Whisper Medium (`openai/whisper-medium`)
+**Execution:**
+```bash
+uv run python workers/whisper_medium_worker.py /tmp/scribby_test.wav --srt
+```
+- Verified local model weights loaded from `models/whisper-medium`.
+- Initialized pipeline on `mps` device.
+- Generated `outputs/transcriptions/scribby_test_whisper-medium_20261004_005234.json` and `.srt`.
+- Full Text: `"Welcome to Scribbitranscription test."`
 
 ### 3. Pipeline Import Verification
 ```bash

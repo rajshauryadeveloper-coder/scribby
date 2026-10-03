@@ -101,6 +101,7 @@ def ensure_model_available(
         snapshot_download(
             repo_id=model_id,
             local_dir=str(target_dir),
+            ignore_patterns=["*.msgpack", "*.h5", "*.ot", "flax_model*", "tf_model*"],
         )
         logger.info(f"Successfully downloaded model '{model_id}' to '{target_dir}'.")
     except Exception as e:

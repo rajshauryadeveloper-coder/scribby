@@ -37,6 +37,7 @@ def test_ensure_model_available_downloads_when_missing(tmp_path):
         mock_download.assert_called_once_with(
             repo_id="openai/whisper-base",
             local_dir=str(model_dir),
+            ignore_patterns=["*.msgpack", "*.h5", "*.ot", "flax_model*", "tf_model*"],
         )
 
 
