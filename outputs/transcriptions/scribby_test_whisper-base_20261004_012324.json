@@ -1,0 +1,28 @@
+{
+  "audio_file": "/private/tmp/scribby_test.wav",
+  "audio_filename": "scribby_test.wav",
+  "model": "openai/whisper-base",
+  "transcribed_at": "2026-10-04T01:23:24.475462+05:30",
+  "duration": 1.92,
+  "text": "Welcome to Scribby Transcription Test.",
+  "segments": [
+    {
+      "id": 0,
+      "start": 0.0,
+      "end": 2.08,
+      "text": "Welcome to Scribby Transcription Test."
+    }
+  ],
+  "metadata": {
+    "progress_percentage": 100.0,
+    "words_per_second": 12.61,
+    "words_per_minute": 756.57,
+    "execution_time_seconds": 0.397,
+    "file_path": "/Users/shaurya/Developer/scribby/outputs/transcriptions/scribby_test_whisper-base_20261004_012324.json",
+    "output_srt_path": "/Users/shaurya/Developer/scribby/outputs/transcriptions/scribby_test_whisper-base_20261004_012324.srt",
+    "word_count": 5,
+    "audio_duration": 1.92,
+    "real_time_factor": 4.84
+  },
+  "output_file": "/Users/shaurya/Developer/scribby/outputs/transcriptions/scribby_test_whisper-base_20261004_012324.json"
+}

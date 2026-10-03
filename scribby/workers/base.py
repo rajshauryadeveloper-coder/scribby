@@ -6,11 +6,17 @@ import os
 import wave
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import torch
 from huggingface_hub import snapshot_download
 from transformers import pipeline
+
+from scribby.workers.metadata import (
+    ProgressTracker,
+    TranscriptionProgress,
+    WhisperMetadataStreamer,
+)
 
 # Load environment variables if available
 try:
@@ -165,6 +171,7 @@ def format_transcription_result(
     model_name: str,
     raw_output: Dict[str, Any],
     duration_seconds: Optional[float] = None,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Format raw transformers speech recognition output into a clean,
@@ -217,6 +224,7 @@ def format_transcription_result(
         "duration": duration_seconds,
         "text": full_text,
         "segments": segments,
+        "metadata": metadata or {},
     }
 
 
@@ -240,13 +248,20 @@ def save_transcription_output(
     base_filename = f"{audio_stem}_{model_slug}_{timestamp_tag}"
 
     json_file_path = target_dir / f"{base_filename}.json"
+    srt_file_path = target_dir / f"{base_filename}.srt" if save_srt else None
+
+    # Sync output file paths into metadata if metadata dictionary exists
+    if "metadata" in result_data and isinstance(result_data["metadata"], dict):
+        result_data["metadata"]["file_path"] = str(json_file_path.resolve())
+        if srt_file_path:
+            result_data["metadata"]["output_srt_path"] = str(srt_file_path.resolve())
+
     with open(json_file_path, "w", encoding="utf-8") as f:
         json.dump(result_data, f, indent=2, ensure_ascii=False)
 
     logger.info(f"Saved transcription JSON to: {json_file_path}")
 
-    if save_srt:
-        srt_file_path = target_dir / f"{base_filename}.srt"
+    if save_srt and srt_file_path:
         srt_content = format_to_srt(result_data.get("segments", []))
         with open(srt_file_path, "w", encoding="utf-8") as f:
             f.write(srt_content)
@@ -325,9 +340,11 @@ class BaseWhisperWorker:
         generate_srt: bool = False,
         return_timestamps: bool = True,
         generate_kwargs: Optional[Dict[str, Any]] = None,
+        progress_callback: Optional[Callable[[TranscriptionProgress], None]] = None,
     ) -> Dict[str, Any]:
         """
-        Transcribe an input audio file and return structured timestamped data.
+        Transcribe an input audio file and return structured timestamped data
+        along with complete execution metadata and optional live progress tracking.
         """
         audio_file = Path(audio_path)
         if not audio_file.exists():
@@ -338,14 +355,47 @@ class BaseWhisperWorker:
 
         logger.info(f"Transcribing audio file: {audio_file.name} using {self.model_id}...")
 
+        tracker = ProgressTracker(audio_duration=duration, callback=progress_callback)
+        tracker.start()
+
         call_kwargs: Dict[str, Any] = {
             "return_timestamps": return_timestamps,
             "batch_size": self.batch_size,
         }
-        if generate_kwargs:
-            call_kwargs["generate_kwargs"] = generate_kwargs
+        gen_kwargs = dict(generate_kwargs) if generate_kwargs else {}
 
-        raw_output = pipe(str(audio_file), **call_kwargs)
+        # Attach real-time streamer if model tokenizer is available and beam search isn't enforced
+        num_beams = gen_kwargs.get("num_beams")
+        if (num_beams is None or num_beams == 1) and hasattr(pipe, "tokenizer") and pipe.tokenizer is not None:
+            if "streamer" not in gen_kwargs:
+                try:
+                    streamer = WhisperMetadataStreamer(
+                        tokenizer=pipe.tokenizer,
+                        tracker=tracker,
+                        chunk_length_s=self.chunk_length_s,
+                    )
+                    gen_kwargs["streamer"] = streamer
+                    if "num_beams" not in gen_kwargs:
+                        gen_kwargs["num_beams"] = 1
+                except Exception as e:
+                    logger.debug(f"Could not initialize WhisperMetadataStreamer: {e}")
+
+        if gen_kwargs:
+            call_kwargs["generate_kwargs"] = gen_kwargs
+
+        try:
+            raw_output = pipe(str(audio_file), **call_kwargs)
+        except TypeError as e:
+            # Fallback if pipeline does not accept generate_kwargs
+            if "generate_kwargs" in call_kwargs:
+                del call_kwargs["generate_kwargs"]
+                raw_output = pipe(str(audio_file), **call_kwargs)
+            else:
+                tracker.fail(str(e))
+                raise
+        except Exception as e:
+            tracker.fail(str(e))
+            raise
 
         result = format_transcription_result(
             audio_path=audio_file,
@@ -354,15 +404,31 @@ class BaseWhisperWorker:
             duration_seconds=duration,
         )
 
+        json_file_path = None
+        srt_file_path = None
         if save_output:
+            tracker.update(status="saving", progress_percentage=99.9)
             target_out = output_dir or self.output_dir
-            saved_file = save_transcription_output(
+            json_file_path = save_transcription_output(
                 result_data=result,
                 audio_path=audio_file,
                 output_dir=target_out,
                 model_name=self.model_id,
                 save_srt=generate_srt,
             )
-            result["output_file"] = str(saved_file.resolve())
+            result["output_file"] = str(json_file_path.resolve())
+            if generate_srt:
+                srt_file_path = json_file_path.with_suffix(".srt")
+
+        final_metadata = tracker.complete(
+            output_file=json_file_path,
+            output_srt_path=srt_file_path,
+            final_text=result.get("text", ""),
+        )
+        result["metadata"] = final_metadata.to_dict()
+
+        if json_file_path and json_file_path.exists():
+            with open(json_file_path, "w", encoding="utf-8") as f:
+                json.dump(result, f, indent=2, ensure_ascii=False)
 
         return result

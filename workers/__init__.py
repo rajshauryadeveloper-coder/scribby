@@ -2,8 +2,13 @@
 
 from scribby.workers import (
     BaseWhisperWorker,
+    ConsoleProgressReporter,
+    ProgressTracker,
+    TranscriptionMetadata,
+    TranscriptionProgress,
     WhisperBaseWorker,
     WhisperMediumWorker,
+    WhisperMetadataStreamer,
     ensure_model_available,
     format_to_srt,
     format_transcription_result,
@@ -12,8 +17,13 @@ from scribby.workers import (
 
 __all__ = [
     "BaseWhisperWorker",
+    "ConsoleProgressReporter",
+    "ProgressTracker",
+    "TranscriptionMetadata",
+    "TranscriptionProgress",
     "WhisperBaseWorker",
     "WhisperMediumWorker",
+    "WhisperMetadataStreamer",
     "ensure_model_available",
     "format_to_srt",
     "format_transcription_result",

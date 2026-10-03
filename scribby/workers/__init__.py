@@ -10,13 +10,25 @@ from scribby.workers.base import (
     get_default_outputs_dir,
     save_transcription_output,
 )
+from scribby.workers.metadata import (
+    ConsoleProgressReporter,
+    ProgressTracker,
+    TranscriptionMetadata,
+    TranscriptionProgress,
+    WhisperMetadataStreamer,
+)
 from scribby.workers.whisper_base_worker import WhisperBaseWorker
 from scribby.workers.whisper_medium_worker import WhisperMediumWorker
 
 __all__ = [
     "BaseWhisperWorker",
+    "ConsoleProgressReporter",
+    "ProgressTracker",
+    "TranscriptionMetadata",
+    "TranscriptionProgress",
     "WhisperBaseWorker",
     "WhisperMediumWorker",
+    "WhisperMetadataStreamer",
     "ensure_model_available",
     "format_to_srt",
     "format_transcription_result",

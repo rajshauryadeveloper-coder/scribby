@@ -82,3 +82,41 @@ def test_save_transcription_output(tmp_path):
     assert loaded["model"] == "openai/whisper-base"
     assert loaded["text"] == "Testing output persistence"
     assert len(loaded["segments"]) == 1
+
+
+def test_format_transcription_result_with_metadata():
+    raw_output = {"text": "Test with metadata", "chunks": []}
+    meta_in = {"progress_percentage": 100.0, "words_per_second": 12.5}
+    result = format_transcription_result(
+        audio_path="test.mp3",
+        model_name="openai/whisper-base",
+        raw_output=raw_output,
+        metadata=meta_in,
+    )
+    assert result["metadata"] == meta_in
+    assert result["metadata"]["progress_percentage"] == 100.0
+
+
+def test_save_transcription_output_syncs_metadata_paths(tmp_path):
+    output_data = {
+        "audio_file": "speech.wav",
+        "model": "openai/whisper-base",
+        "transcribed_at": "2026-10-04T00:00:00+05:30",
+        "duration": 5.0,
+        "text": "Testing metadata path sync",
+        "segments": [{"id": 0, "start": 0.0, "end": 5.0, "text": "Testing metadata path sync"}],
+        "metadata": {"progress_percentage": 100.0, "file_path": None},
+    }
+
+    output_file = save_transcription_output(
+        result_data=output_data,
+        audio_path="speech.wav",
+        output_dir=tmp_path,
+        model_name="openai/whisper-base",
+        save_srt=True,
+    )
+
+    loaded = json.loads(output_file.read_text(encoding="utf-8"))
+    assert loaded["metadata"]["file_path"] == str(output_file.resolve())
+    assert loaded["metadata"]["output_srt_path"] == str(output_file.with_suffix(".srt").resolve())
+    assert Path(loaded["metadata"]["output_srt_path"]).exists()

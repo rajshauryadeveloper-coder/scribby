@@ -63,33 +63,44 @@ Scribby provides production-ready speech-to-text workers powered by Hugging Face
 
 ### Key Features
 - **Local Model Caching:** Models are downloaded once to `models/` (gitignored) on the first run and subsequently loaded offline from disk without re-downloading.
-- **Database-Ready Timestamped Output:** Transcriptions are structured into JSON files under `outputs/` with audio metadata, total duration, full text, and timestamped segments (`id`, `start`, `end`, `text`).
-- **Pipeline & CLI Ready:** Can be used either as standalone CLI commands or imported directly into Python processing pipelines.
+- **Worker Metadata & Progress Tracking:** Real-time progress monitoring provides:
+  - Progress percentage ($0.0\%$ to $100.0\%$)
+  - Live and overall Words Per Second (WPS) and Words Per Minute (WPM)
+  - Exact time taken to complete the transcription
+  - Saved output file paths (`.json` and optional `.srt`)
+- **Database-Ready Timestamped Output:** Transcriptions are structured into JSON files under `outputs/` with audio metadata, total duration, full text, timestamped segments (`id`, `start`, `end`, `text`), and an execution `metadata` dictionary.
+- **Pipeline & CLI Ready:** Can be used either as standalone CLI commands (with interactive live progress or `--quiet`) or imported directly into Python processing pipelines with custom `progress_callback` handlers.
 - **Optional Subtitles:** Can export `.srt` subtitle files alongside JSON via `--srt`.
 
 ### Usage
 
 #### 1. CLI Execution
 ```bash
-# Using Whisper Base
+# Using Whisper Base (with live progress tracking)
 uv run python workers/whisper_base_worker.py path/to/audio.wav
 
-# Using Whisper Medium with subtitle export
-uv run python workers/whisper_medium_worker.py path/to/audio.mp3 --srt --output-dir outputs/
+# Using Whisper Medium with subtitle export and quiet mode
+uv run python workers/whisper_medium_worker.py path/to/audio.mp3 --srt --output-dir outputs/ --quiet
 ```
 
 #### 2. Pipeline Integration (Python API)
 ```python
 from scribby.workers.whisper_base_worker import WhisperBaseWorker, transcribe_audio
+from scribby.workers.metadata import TranscriptionProgress
 
-# One-liner convenience
-result = transcribe_audio("audio.wav", output_dir="outputs/", generate_srt=True)
-print(result["text"])
-print(result["segments"])
+# Optional live progress callback
+def on_progress(p: TranscriptionProgress):
+    print(f"[{p.progress_percentage:.1f}%] {p.words_per_second:.1f} words/s ({p.words_per_minute:.1f} wpm) | Elapsed: {p.elapsed_time_seconds:.2f}s")
 
-# Or with worker instance
-worker = WhisperBaseWorker()
-result = worker.transcribe("audio.mp3")
+# One-liner convenience with callback
+result = transcribe_audio(
+    "audio.wav",
+    output_dir="outputs/",
+    generate_srt=True,
+    progress_callback=on_progress,
+)
+print("Execution Metadata:", result["metadata"])
+print("Full Text:", result["text"])
 ```
 
 ### Running Tests
@@ -115,6 +126,7 @@ scribby/
 │   └── workers/                          # Transcription workers
 │       ├── __init__.py
 │       ├── base.py                       # Base worker, model caching & output formatters
+│       ├── metadata.py                   # Progress tracking, WPS/WPM calculation & streamers
 │       ├── whisper_base_worker.py        # openai/whisper-base worker
 │       └── whisper_medium_worker.py      # openai/whisper-medium worker
 ├── workers/                              # Root convenience accessors
@@ -129,6 +141,7 @@ scribby/
 │   └── audio/                            # Future generated audio output (.gitkeep)
 ├── tests/                                # Test suite
 │   ├── test_cli.py
+│   ├── test_metadata.py
 │   ├── test_model_manager.py
 │   ├── test_output_formatter.py
 │   ├── test_whisper_base_worker.py
@@ -139,7 +152,8 @@ scribby/
     ├── templates/
     │   └── issue-resolution-template.md  # Standardized issue resolution report template
     ├── issue-1-initialize-codebase.md    # Initialized codebase report
-    └── issue-3-create-transcription-workers.md # Transcription workers report
+    ├── issue-3-create-transcription-workers.md # Transcription workers report
+    └── issue-6-worker-metadata.md        # Worker metadata system report
 ```
 
 ---
